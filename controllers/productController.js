@@ -76,8 +76,12 @@ exports.createProduct = async (req, res) => {
         // Build media from uploaded files (req.files is an array with upload.array)
         const files = req.files || [];
         const fallbackUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab';
+        
+        // Dynamic base URL for uploads
+        const baseUrl = req.protocol + '://' + req.get('host');
+        
         const imageUrls = files.length > 0
-            ? files.map(f => `http://localhost:5000/uploads/${f.filename}`)
+            ? files.map(f => `${baseUrl}/uploads/${f.filename}`)
             : [fallbackUrl];
 
         const product = new Product({

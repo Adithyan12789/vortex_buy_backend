@@ -2,13 +2,18 @@ const Cart = require('../models/Cart');
 
 exports.getCart = async (req, res) => {
     try {
-        if (!req.user) {
-            return res.json({ lineItems: [], subtotal: { amount: 0 } });
+        const guestId = req.query.guestId;
+        const userId = req.user ? req.user.id : null;
+
+        let cart;
+        if (userId) {
+            cart = await Cart.findOne({ user: userId }).populate('lineItems.productId');
+        } else if (guestId) {
+            cart = await Cart.findOne({ guestId }).populate('lineItems.productId');
         }
-        let cart = await Cart.findOne({ user: req.user.id }).populate('lineItems.productId');
+
         if (!cart) {
-            cart = new Cart({ user: req.user.id, lineItems: [] });
-            await cart.save();
+            return res.json({ lineItems: [], subtotal: { amount: 0 } });
         }
         res.json(cart);
     } catch (err) {
@@ -18,11 +23,23 @@ exports.getCart = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
     try {
-        if (!req.user) return res.status(401).json({ msg: "Please login to add to cart" });
+        const { productId, quantity, guestId } = req.body;
+        const userId = req.user ? req.user.id : null;
 
-        const { productId, quantity } = req.body;
-        let cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) cart = new Cart({ user: req.user.id, lineItems: [] });
+        if (!userId && !guestId) {
+            return res.status(400).json({ msg: "Identifier required to create a cart" });
+        }
+
+        let cart;
+        if (userId) {
+            cart = await Cart.findOne({ user: userId });
+        } else {
+            cart = await Cart.findOne({ guestId });
+        }
+
+        if (!cart) {
+            cart = new Cart({ user: userId, guestId: userId ? null : guestId, lineItems: [] });
+        }
         
         const itemIndex = cart.lineItems.findIndex(p => p.productId == productId);
         if (itemIndex > -1) {
@@ -30,6 +47,7 @@ exports.addToCart = async (req, res) => {
         } else {
             cart.lineItems.push({ productId, quantity });
         }
+
         await cart.save();
         res.json({ cart });
     } catch (err) {
@@ -39,12 +57,20 @@ exports.addToCart = async (req, res) => {
 
 exports.removeFromCart = async (req, res) => {
     try {
-        if (!req.user) return res.status(401).json({ msg: "Please login to remove from cart" });
+        const { itemId, guestId } = req.body; 
+        const userId = req.user ? req.user.id : null;
+        
+        let cart;
+        if (userId) {
+            cart = await Cart.findOne({ user: userId });
+        } else if (guestId) {
+            cart = await Cart.findOne({ guestId });
+        }
 
-        const { itemId } = req.body; 
-        let cart = await Cart.findOne({ user: req.user.id });
-        cart.lineItems = cart.lineItems.filter(item => item.productId != itemId);
-        await cart.save();
+        if (cart) {
+            cart.lineItems = cart.lineItems.filter(item => item.productId != itemId);
+            await cart.save();
+        }
         res.json({ cart });
     } catch (err) {
         res.status(500).send('Server error');

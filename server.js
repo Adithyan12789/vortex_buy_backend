@@ -10,7 +10,13 @@ connectDB();
 
 const path = require('path');
 
-app.use(cors());
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+app.use(cors({
+    origin: frontendUrl,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
