@@ -29,7 +29,6 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-app.use('/api', require('./routes/authRoutes'));
 app.use('/api', require('./routes/productRoutes'));
 app.use('/api', require('./routes/cartRoutes'));
 app.use('/api', require('./routes/paymentRoutes'));
