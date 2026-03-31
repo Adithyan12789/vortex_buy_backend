@@ -78,4 +78,34 @@ exports.removeFromCart = async (req, res) => {
     } catch (err) {
         res.status(500).send('Server error');
     }
-}
+};
+
+exports.updateQuantity = async (req, res) => {
+    try {
+        const { productId, quantity, guestId } = req.body;
+        const userId = req.user ? req.user.id : null;
+        
+        let cart;
+        if (userId) {
+            cart = await Cart.findOne({ user: userId });
+        } else if (guestId) {
+            cart = await Cart.findOne({ guestId });
+        }
+
+        if (cart) {
+            const itemIndex = cart.lineItems.findIndex(p => p.productId == productId);
+            if (itemIndex > -1) {
+                cart.lineItems[itemIndex].quantity = quantity;
+                if (quantity <= 0) {
+                    cart.lineItems.splice(itemIndex, 1);
+                }
+                await cart.save();
+            }
+        }
+        
+        const populatedCart = cart ? await Cart.findById(cart._id).populate('lineItems.productId') : { lineItems: [], subtotal: { amount: 0 } };
+        res.json({ cart: populatedCart });
+    } catch (err) {
+        res.status(500).send('Server error');
+    }
+};
