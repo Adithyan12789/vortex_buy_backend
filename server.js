@@ -10,9 +10,17 @@ connectDB();
 
 const path = require('path');
 
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+    .split(',')
+    .map(o => o.trim());
+
 app.use(cors({
-    origin: frontendUrl,
+    origin: (origin, callback) => {
+        // allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
     allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
