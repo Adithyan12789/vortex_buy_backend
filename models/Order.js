@@ -9,6 +9,12 @@ const OrderSchema = new mongoose.Schema({
         price: Number
     }],
     totalAmount: Number,
+    paymentMethod: { type: String, default: 'Razorpay' },
+    shippingInfo: {
+        name: String,
+        email: String,
+        address: String
+    },
     paymentStatus: { type: String, default: 'Pending' },
     razorpayOrderId: String,
     razorpayPaymentId: String

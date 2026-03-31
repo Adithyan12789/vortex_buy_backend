@@ -9,28 +9,32 @@ const instance = new Razorpay({
 
 exports.createOrder = async (req, res) => {
     try {
-        const { amount, lineItems, guestId } = req.body;
+        const { amount, lineItems, guestId, paymentMethod, shippingInfo } = req.body;
         const userId = req.user ? req.user.id : null;
         
-        // Check if we should use demo mode (dummy keys)
-        const isDummy = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key' || process.env.RAZORPAY_KEY_SECRET === 'secret_string_from_razorpay';
-        
         let order;
-        if (isDummy) {
-            // Return a mock order object for demo purposes
-            order = {
-                id: "order_demo_" + Date.now(),
-                amount: Math.round(amount * 100),
-                currency: "INR",
-                notes: { isDemo: true }
-            };
+        if (paymentMethod === 'COD') {
+            order = { id: "ord_cod_" + Date.now() };
         } else {
-            const options = {
-                amount: Math.round(amount * 100),
-                currency: "INR",
-                receipt: "receipt_order_" + Date.now()
-            };
-            order = await instance.orders.create(options);
+            // Check if we should use demo mode (dummy keys)
+            const isDummy = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key' || process.env.RAZORPAY_KEY_SECRET === 'secret_string_from_razorpay';
+            
+            if (isDummy) {
+                // Return a mock order object for demo purposes
+                order = {
+                    id: "order_demo_" + Date.now(),
+                    amount: Math.round(amount * 100),
+                    currency: "INR",
+                    notes: { isDemo: true }
+                };
+            } else {
+                const options = {
+                    amount: Math.round(amount * 100),
+                    currency: "INR",
+                    receipt: "receipt_order_" + Date.now()
+                };
+                order = await instance.orders.create(options);
+            }
         }
         
         const newOrderObj = new Order({
@@ -38,7 +42,10 @@ exports.createOrder = async (req, res) => {
             guestId: userId ? null : guestId,
             lineItems: lineItems,
             totalAmount: amount,
-            razorpayOrderId: order.id
+            paymentMethod: paymentMethod || 'Razorpay',
+            shippingInfo: shippingInfo,
+            razorpayOrderId: order.id,
+            paymentStatus: paymentMethod === 'COD' ? 'Paid (On Delivery)' : 'Pending'
         });
         await newOrderObj.save();
         
