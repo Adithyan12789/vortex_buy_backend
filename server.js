@@ -32,6 +32,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', require('./routes/productRoutes'));
 app.use('/api', require('./routes/cartRoutes'));
 app.use('/api', require('./routes/paymentRoutes'));
+app.use('/api', require('./routes/reviewRoutes'));
 
 // Seed Mock Data route for testing UI fast locally
 app.get('/api/seed', async (req, res) => {

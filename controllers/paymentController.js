@@ -9,10 +9,11 @@ const instance = new Razorpay({
 
 exports.createOrder = async (req, res) => {
     try {
-        const { amount, lineItems } = req.body; // Amount should be passed from frontend
+        const { amount, lineItems, guestId } = req.body; // Amount should be passed from frontend
+        const userId = req.user ? req.user.id : null;
         
         const options = {
-            amount: amount * 100, // format in smallest currency unit
+            amount: Math.round(amount * 100), // format in smallest currency unit, rounded to avoid float issues
             currency: "INR",
             receipt: "receipt_order_" + Date.now()
         };
@@ -20,7 +21,8 @@ exports.createOrder = async (req, res) => {
         const order = await instance.orders.create(options);
         
         const newOrderObj = new Order({
-            user: req.user.id,
+            user: userId,
+            guestId: userId ? null : guestId,
             lineItems: lineItems,
             totalAmount: amount,
             razorpayOrderId: order.id
@@ -51,6 +53,27 @@ exports.verifyPayment = async (req, res) => {
         } else {
             res.status(400).json({ success: false, message: "Invalid signature" });
         }
+    } catch (error) {
+        res.status(500).send(error);
+    }
+};
+
+exports.getOrders = async (req, res) => {
+    try {
+        const guestId = req.query.guestId;
+        const userId = req.user ? req.user.id : null;
+        
+        let query = {};
+        if (userId) {
+            query.user = userId;
+        } else if (guestId) {
+            query.guestId = guestId;
+        } else {
+            return res.json([]);
+        }
+
+        const orders = await Order.find(query).populate('lineItems.productId').sort({ createdAt: -1 });
+        res.json(orders);
     } catch (error) {
         res.status(500).send(error);
     }
