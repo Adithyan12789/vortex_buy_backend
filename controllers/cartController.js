@@ -49,7 +49,8 @@ exports.addToCart = async (req, res) => {
         }
 
         await cart.save();
-        res.json({ cart });
+        const populatedCart = await Cart.findById(cart._id).populate('lineItems.productId');
+        res.json({ cart: populatedCart });
     } catch (err) {
         res.status(500).send('Server error');
     }
@@ -71,7 +72,9 @@ exports.removeFromCart = async (req, res) => {
             cart.lineItems = cart.lineItems.filter(item => item.productId != itemId);
             await cart.save();
         }
-        res.json({ cart });
+        
+        const populatedCart = cart ? await Cart.findById(cart._id).populate('lineItems.productId') : { lineItems: [], subtotal: { amount: 0 } };
+        res.json({ cart: populatedCart });
     } catch (err) {
         res.status(500).send('Server error');
     }
