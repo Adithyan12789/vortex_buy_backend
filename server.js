@@ -10,21 +10,23 @@ connectDB();
 
 const path = require('path');
 
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
-    .split(',')
-    .map(o => o.trim());
+const allowedOrigins = [
+    'https://vortex-buy.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(o => o.trim()) : [])
+];
 
 app.use(cors({
-    origin: (origin, callback) => {
-        // allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        callback(new Error(`CORS: origin ${origin} not allowed`));
-    },
+    origin: allowedOrigins,
     credentials: true,
     allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    optionsSuccessStatus: 200
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
