@@ -3,7 +3,7 @@ const Order = require('../models/Order');
 const crypto = require('crypto');
 
 const instance = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key',
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_Oks5Gpac00wL72',
     key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
 });
 
@@ -13,7 +13,7 @@ exports.createOrder = async (req, res) => {
         const userId = req.user ? req.user.id : null;
         
         // Check if we should use demo mode (dummy keys)
-        const isDummy = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key' || process.env.RAZORPAY_KEY_ID.startsWith('rzp_test_12345');
+        const isDummy = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key' || process.env.RAZORPAY_KEY_SECRET === 'secret_string_from_razorpay';
         
         let order;
         if (isDummy) {
